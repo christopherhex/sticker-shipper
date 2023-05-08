@@ -1,4 +1,4 @@
-import { writeFile, mkdir, readdir, readFile} from "fs/promises"
+import { writeFile, mkdir, readdir, readFile, rmdir} from "fs/promises"
 import { promisify } from "util"
 
 import { exec as defaultExec } from "child_process"
@@ -17,12 +17,9 @@ const DPI = 300;
 let initDone = false;
 
 async function assureDirectoriesExist() {
-
-    if(!initDone){
         await mkdir(path.join(process.cwd(), FILE_DIR_INBOX), {recursive: true});
         await mkdir(path.join(process.cwd(), FILE_DIR_QUEUE), {recursive: true});
         await mkdir(path.join(process.cwd(), FILE_DIR_OUTBOX), {recursive: true});
-    }
 }
 
 
@@ -38,7 +35,7 @@ export async function saveInbox(file: File){
     // Save PDF
     await writeFile(pdfFilePath, new Uint8Array(fileBuf),{flag:'w'});
     //Create filename substring (remove .pdf)
-    exec(`convert --density 300 --quality 100 ${pdfFilePath} ${pngFilePath}`);
+    exec(`convert -density 300 -quality 100 ${pdfFilePath} ${pngFilePath}`);
         
     const image = await sharp(pngFilePath);
 
@@ -56,7 +53,7 @@ export async function saveInbox(file: File){
         })    
 }
 
-export async function generateLabels(){
+export async function generateLabels(deleteAfter:Boolean = false){
 
     const A4_WIDTH = Math.round(8.27 * DPI);
     const A4_HEIGHT = Math.round(11.69 * DPI);
@@ -93,15 +90,20 @@ export async function generateLabels(){
 
     }
 
-    const pngFilePath = path.join(process.cwd(), FILE_DIR_OUTBOX, 'test.png');
-    const pdfFilePath = path.join(process.cwd(), FILE_DIR_OUTBOX, 'test.pdf')
+    const ts = Date.now();
+    const pngFilePath = path.join(process.cwd(), FILE_DIR_OUTBOX, `labels-${ts}.png`);
+    const pdfFilePath = path.join(process.cwd(), FILE_DIR_OUTBOX, `labels-${ts}.pdf`)
 
-    await sharp(newImageDataBuffer).toFormat('png').toFile(path.join(process.cwd(), FILE_DIR_OUTBOX, 'test.png'))
+    await sharp(newImageDataBuffer).toFormat('png').toFile(path.join(process.cwd(), FILE_DIR_OUTBOX, `labels-${ts}.png`))
 
-    await exec(`convert --density 300 --quality 100 ${pngFilePath} ${pdfFilePath} `);
+    await exec(`convert -density 300 -quality 100 ${pngFilePath} ${pdfFilePath} `);
 
     // ReadFile
     const pdfBuffer = await readFile(pdfFilePath);
+
+    if(deleteAfter){
+        await rmdir(FILE_DIR_QUEUE, {recursive: true});
+    }
 
     return pdfBuffer
 
