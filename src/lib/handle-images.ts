@@ -1,7 +1,12 @@
 import { writeFile, mkdir, readdir, readFile} from "fs/promises"
-import { exec } from "child_process"
+import { promisify } from "util"
+
+import { exec as defaultExec } from "child_process"
 import sharp from "sharp"
 import * as path from 'path'
+
+const exec = promisify(defaultExec);
+
 
 const FILE_DIR_INBOX = `./filestorage/inbox`
 const FILE_DIR_QUEUE = `./filestorage/queue`
@@ -33,26 +38,22 @@ export async function saveInbox(file: File){
     // Save PDF
     await writeFile(pdfFilePath, new Uint8Array(fileBuf),{flag:'w'});
     //Create filename substring (remove .pdf)
-    exec(`convert --density 300 --quality 100 ${pdfFilePath} ${pngFilePath}`, () => {
+    exec(`convert --density 300 --quality 100 ${pdfFilePath} ${pngFilePath}`);
+        
+    const image = await sharp(pngFilePath);
 
-        const image = sharp(pngFilePath);
-
-        image
-            .metadata()
-            .then(metadata => {
-                return image
-                    .extract({
-                        left: 0, 
-                        top: 0,
-                        width: metadata.width || 0,
-                        height: Math.round((metadata.height || 0)/2) || 0
-                    })
-                    .toFile(pngOutputPath)
-            })
-    })
-
-
-    
+    await image
+        .metadata()
+        .then(metadata => {
+            return image
+                .extract({
+                    left: 0, 
+                    top: 0,
+                    width: metadata.width || 0,
+                    height: Math.round((metadata.height || 0)/2) || 0
+                })
+                .toFile(pngOutputPath)
+        })    
 }
 
 export async function generateLabels(){
@@ -97,7 +98,7 @@ export async function generateLabels(){
 
     await sharp(newImageDataBuffer).toFormat('png').toFile(path.join(process.cwd(), FILE_DIR_OUTBOX, 'test.png'))
 
-    exec(`convert --density 300 --quality 100 ${pngFilePath} ${pdfFilePath} `, () => {});
+    await exec(`convert --density 300 --quality 100 ${pngFilePath} ${pdfFilePath} `);
 
     // ReadFile
     const pdfBuffer = await readFile(pdfFilePath);
