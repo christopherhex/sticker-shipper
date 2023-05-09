@@ -12,7 +12,7 @@ const FILE_DIR_INBOX = `./filestorage/inbox`
 const FILE_DIR_QUEUE = `./filestorage/queue`
 const FILE_DIR_OUTBOX = `./filestorage/outbox`
 
-const DPI = 300;
+const DPI = 200;
 
 let initDone = false;
 
@@ -35,7 +35,7 @@ export async function saveInbox(file: File){
     // Save PDF
     await writeFile(pdfFilePath, new Uint8Array(fileBuf),{flag:'w'});
     //Create filename substring (remove .pdf)
-    await exec(`convert -density 300 -quality 100 ${pdfFilePath} ${pngFilePath}`);
+    await exec(`convert -density 200 ${pdfFilePath} ${pngFilePath}`);
         
     const image = await sharp(pngFilePath);
 
@@ -96,7 +96,7 @@ export async function generateLabels(deleteAfter:Boolean = false){
 
     await sharp(newImageDataBuffer).toFormat('png').toFile(path.join(process.cwd(), FILE_DIR_OUTBOX, `labels-${ts}.png`))
 
-    await exec(`convert -density 300 -quality 100 ${pngFilePath} ${pdfFilePath} `);
+    await exec(`convert -page a4 -quality 100 ${pngFilePath} ${pdfFilePath}`);
 
     // ReadFile
     const pdfBuffer = await readFile(pdfFilePath);
