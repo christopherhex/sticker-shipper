@@ -35,7 +35,7 @@ export async function saveInbox(file: File){
     // Save PDF
     await writeFile(pdfFilePath, new Uint8Array(fileBuf),{flag:'w'});
     //Create filename substring (remove .pdf)
-    exec(`convert -density 300 -quality 100 ${pdfFilePath} ${pngFilePath}`);
+    await exec(`convert -density 300 -quality 100 ${pdfFilePath} ${pngFilePath}`);
         
     const image = await sharp(pngFilePath);
 
