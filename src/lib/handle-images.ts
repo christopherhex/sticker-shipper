@@ -53,7 +53,13 @@ export async function saveInbox(file: File){
         })    
 }
 
-export async function generateLabels(deleteAfter:Boolean = false){
+/**
+ * Generate labels
+ * @param deleteAfter 
+ * @param skipLabels 
+ * @returns 
+ */
+export async function generateLabels(deleteAfter:Boolean = false, skipLabels:Array<number> = []){
 
     const A4_WIDTH = Math.round(8.27 * DPI);
     const A4_HEIGHT = Math.round(11.69 * DPI);
@@ -69,14 +75,15 @@ export async function generateLabels(deleteAfter:Boolean = false){
 
     const files = await readdir(path.join(process.cwd(), FILE_DIR_QUEUE));
 
+    let availableLabels = [0,1,2,3].filter((num) => !skipLabels.includes(num))
+
     for (let i = 0; i  < files.length ; i++){
 
         const filePath = path.join(process.cwd(), FILE_DIR_QUEUE,files[i]);
 
-        const xOffset = (i%2) * Math.round(A4_WIDTH/2);
-        const yOffset = i > 1 ? Math.round(A4_HEIGHT/2) : 0 ;
-
-        console.log(files[i]);
+        const offsetIndex = availableLabels[i];
+        const xOffset = (offsetIndex%2) * Math.round(A4_WIDTH/2);
+        const yOffset = offsetIndex > 1 ? Math.round(A4_HEIGHT/2) : 0 ;
 
         const overlayData = await sharp(filePath)
             .rotate(90)

@@ -5,7 +5,10 @@ export async function GET(request: Request) {
   const newUrl = new URL(request.url);
 
   const shouldDelete = newUrl.searchParams.get('delete') === "1" ;
-  const pdfBuff = await generateLabels(shouldDelete);
+  const skipLabels = newUrl.searchParams.get('skipLabels') || '';
+
+  const skipArray = skipLabels.split(",").map(it => Number.parseInt(it.trim()));
+  const pdfBuff = await generateLabels(shouldDelete, skipArray);
 
   return new Response(pdfBuff)
 }
